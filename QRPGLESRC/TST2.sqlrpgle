@@ -9,4 +9,4 @@ snd-msg *NOTIFY 'My notification message' %TARGET(*EXT) ;
 
 *inlr = *on ;
 
-snd-msg *COMP 'Program has completed' %TARGET(*PGMBDY:1) ;
+snd-msg *COMP 'Program has completed' %TARGET(*PGMBDY:1) ;;;
