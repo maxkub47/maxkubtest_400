@@ -56,17 +56,17 @@ dcl-proc ValidateUserAPI export ;
     Length_of_password = %len(password);
 
     // Call QSYGETPH to validate the username and password
-    chk_usr('MAX': PASSWORD: Profile_handle: QUSEC: Length_of_password: CCSID_of_password);
+    chk_usr(username: PASSWORD: Profile_handle: QUSEC: Length_of_password: CCSID_of_password);
 
     // Check if authentication was successful
     if QUSBAVL = 0;
         // Authentication successful, generate JWT token
-        token = GenerateJWT(username: %trim(GetEnv('MY_SECRET_KEY')));
+        //token = GenerateJWT(username: %trim(GetEnv('MY_SECRET_KEY')));
+        token = GenerateJWT(username: 'ABCDE');
         errmsg = '';
     else;
         // Authentication failed, retrieve error message from errorCode
         RetrieveErrorMessage(QUSEI: errmsg);
-        //errmsg = 'User' + USERNAME + 'Pass' + PASSWORD ;
     endif;
 end-proc;
 
