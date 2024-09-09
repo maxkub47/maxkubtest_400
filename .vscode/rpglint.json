@@ -1,12 +1,12 @@
 {
   "indent": 2,
-  "PrototypeCheck": false,
+  "PrototypeCheck": true,
   "NoOCCURS": true,
-  "NoSELECTAll": false,
+  "NoSELECTAll": true,
   "UppercaseConstants": true,
   "IncorrectVariableCase": true,
   "NoSQLJoins": true,
   "PrettyComments": true,
-  "NoGlobalSubroutines": false,
+  "NoGlobalSubroutines": true,
   "NoExternalTo": ["QCMD", "QP2TERM", "QSH", "SYSTEM", "QCMDEXC"]
 }
