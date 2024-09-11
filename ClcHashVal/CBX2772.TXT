@@ -1,0 +1,549 @@
+     **
+     **  Program . . : CBX2772
+     **  Description : Calculate File Hash Value - CPP
+     **  Author  . . : Carsten Flensburg
+     **
+     **
+     **
+     **  Compile options required:
+     **    CrtRpgMod   Module( CBX2772 )
+     **                DbgView( *LIST )
+     **
+     **    CrtPgm      Pgm( CBX2772 )
+     **                Module( CBX2772 )
+     **                BndSrvPgm( CBX277S )
+     **                ActGrp( *NEW )
+     **
+     **
+     **-- Header specifications:  --------------------------------------------**
+     H Option( *SrcStmt )  BndDir( 'QC2LE' )
+
+     **-- API error data structure:
+     D ERRC0100        Ds                  Qualified
+     D  BytPrv                       10i 0 Inz( %Size( ERRC0100 ))
+     D  BytAvl                       10i 0
+     D  MsgId                         7a
+     D                                1a
+     D  MsgDta                      512a
+
+     **-- Global constants:
+     D OFS_MSGDTA      c                   16
+     D NULL            c                   ''
+     **-- Global variables:
+     D rc              s             10i 0
+     D fd1             s             10i 0 Inz( -2 )
+     D HashVal         s           1024a   Varying
+     D RtnDtaStr       s           1024a
+     D OutStr          s           1024a   Varying
+     D Blanks          s             52a
+     **
+     D HshBlkSiz       s             10i 0
+     D HshLenRem       s             10i 0
+     D HshDta          s          65535a   Based( pHshDta )
+     D HshDtaLen       s             10i 0
+     D HshStr          s           2048a
+     D HshStrLen       s             10i 0
+     **-- IFS I/O constants:
+     D O_WRONLY        c                   2
+     D O_RDONLY        c                   1
+     D O_CREAT         c                   8
+     D O_EXCL          c                   16
+     D O_SHARE_NONE    c                   524288
+     D O_INHERITMODE   c                   134217728
+     D O_IGN_MODE      c                   0
+     **
+     D SEEK_SET        c                   0
+     D SEEK_CUR        c                   1
+     D SEEK_END        c                   2
+     D SEEK_NO_OFS     c                   0
+     **
+     D TYP_MD5         c                   1
+     D TYP_SHA_1       c                   2
+     D TYP_SHA_256     c                   3
+     D TYP_SHA_384     c                   4
+     D TYP_SHA_512     c                   5
+     **-- Cryptographic API constants:
+     D CSP_ANY         c                   '0'
+     D CSP_SFW         c                   '1'
+     D CSP_HDW         c                   '2'
+
+     **-- Display long text:
+     D DspLngTxt       Pr                  ExtPgm( 'QUILNGTX' )
+     D  LngTxt                    32767a   Const  Options( *VarSize )
+     D  LngTxtLen                    10i 0 Const
+     D  MsgId                         7a   Const
+     D  MsgF                         20a   Const
+     D  Error                     32767a   Const  Options( *VarSize )
+     **-- Send program message:
+     D SndPgmMsg       Pr                  ExtPgm( 'QMHSNDPM' )
+     D  MsgId                         7a   Const
+     D  MsgFq                        20a   Const
+     D  MsgDta                      512a   Const  Options( *VarSize )
+     D  MsgDtaLen                    10i 0 Const
+     D  MsgTyp                       10a   Const
+     D  CalStkE                      10a   Const  Options( *VarSize )
+     D  CalStkCtr                    10i 0 Const
+     D  MsgKey                        4a
+     D  Error                       512a          Options( *VarSize )
+     D  CalStkElen                   10i 0 Const  Options( *NoPass )
+     D  CalStkEq                     20a   Const  Options( *NoPass )
+     D  DspWait                      10i 0 Const  Options( *NoPass )
+     D  CalStkEtyp                   20a   Const  Options( *NoPass )
+     D  CcsId                        10i 0 Const  Options( *NoPass )
+     **-- Create algorithm context API:
+     D CrtAlgCtx       Pr                  ExtProc( 'Qc3CreateAlgorithm-
+     D                                     Context')
+     D  AlgDsc                     1024a   Const  Options( *VarSize )
+     D  AlgDscFmt                     8a   Const
+     D  AlgCtxTkn                     8a
+     D  Error                     32767a          Options( *VarSize )
+     **-- Calculate hash API:
+     D CalculateHash   Pr                  ExtProc( 'Qc3CalculateHash' )
+     D  ClcDtaInp                 65535a   Const  Options( *VarSize )
+     D  ClcDtaInpLen                 10i 0 Const
+     D  ClcDtaFmt                     8a   Const
+     D  AlgDsc                      256a   Const  Options( *VarSize )
+     D  AlgDscFmt                     8a   Const
+     D  CrpSrvPrv                     1a   Const
+     D  CrpDevNam                    10a   Const
+     D  ClcDtaOut                   256a          Options( *VarSize )
+     D  Error                     32767a          Options( *VarSize )
+     **-- Open file API:
+     D open            Pr            10i 0 ExtProc( 'open' )
+     D  path                           *   Value  Options( *String )
+     D  oflag                        10i 0 Value
+     D  mode                         10u 0 Value  Options( *NoPass )
+     D  cnvid                        10u 0 Value  Options( *NoPass )
+     D/If Defined( *V5R2M0 )
+     D  txtcrtcnvid                  10u 0 Value  Options( *NoPass )
+     D/Endif
+     **-- Close file or socket descriptor:
+     D close           Pr            10i 0 ExtProc( 'close' )
+     D  fd                           10i 0 Value
+     **-- Read from descriptor:
+     D read            Pr            10i 0 ExtProc( 'read' )
+     D  fd                           10i 0 Value
+     D  buf                            *   Value
+     D  nbyte                        10u 0 Value
+     **-- Set file offset:
+     D lseek           Pr            10i 0 ExtProc( 'lseek' )
+     D  fd                           10i 0 Value
+     D  offset                       10i 0 Value
+     D  whence                       10u 0 Value
+     **-- Get file system information by descriptor:
+     D fstatvfs        Pr            10i 0 ExtProc( 'fstatvfs64' )
+     D  fd                           10i 0 Value
+     D  buf                                Like( statvfs )
+     **-- Register termination exit:
+     D CeeRtx          Pr                    ExtProc( 'CEERTX' )
+     D  procedure                      *     ProcPtr   Const
+     D  token                          *     Options( *Omit )
+     D  fb                           12a     Options( *Omit )
+     **-- Unregister termination exit:
+     D CeeUtx          Pr                    ExtProc( 'CEEUTX' )
+     D  procedure                      *     ProcPtr   Const
+     D  fb                           12a     Options( *Omit )
+     **-- Error number:
+     D sys_errno       Pr              *    ExtProc( '__errno' )
+     **-- Error string:
+     D sys_strerror    Pr              *    ExtProc( 'strerror' )
+     D  errno                        10i 0  Value
+
+     **-- Algorithm description:
+     D ALGD0100        Ds                  Qualified
+     D  AlgCtxTkn                     8a   Inz( *Blanks )
+     D  FinOprFlg                     1a
+     **-- File system information (large files):
+     D statvfs         Ds                  Qualified
+     D  f_bsize                      10u 0
+     D  f_frsize                     10u 0
+     D  f_blocks                     20u 0
+     D  f_bfree                      20u 0
+     D  f_bavail                     20u 0
+     D  f_files                      10u 0
+     D  f_ffree                      10u 0
+     D  f_favail                     10u 0
+     D  f_fsid                       10u 0
+     D  f_flag                       10u 0
+     D  f_namemax                    10u 0
+     D  f_pathmax                    10u 0
+     D  f_objlinkmax                 10i 0
+     D  f_dirlinkmax                 10i 0
+     D  f_reserved1                   4a
+     D  f_fsid64                     20u 0
+     D  f_basetype                   80a
+
+     **-- Remove algorithm context:
+     D RmvAlgCtx       Pr            10i 0
+     D  PxAlgCtx                      8a
+
+     **-- Clean up:
+     D CleanUp         Pr
+     D  pToken                         *   Options( *Omit )
+     **-- Get algorithm context - Hash:
+     D GetAlgCtxH      Pr             8a
+     D  PxHashAlg                    10i 0          Const
+     **-- Get block size:
+     D GetBlkSiz       Pr            10i 0
+     D  PxFd                         10i 0 Const
+     D  PxMaxBlkSiz                  10i 0 Const
+     **-- Get hash value:
+     D GetHashVal      Pr           512a   Varying
+     D  PxHashAlg                    10i 0 Const
+     D  PxHashStr                   512a   Const
+     **-- Convert hex nibbles to character:
+     D CvtHexChr       Pr           128a   Varying
+     D  PxHexStr                    256a   Varying  Const
+     **-- Convert character to hex nibbles:
+     D CvtChrHex       Pr           256a   Varying
+     D  PxHexStr                    128a   Varying  Const
+
+     **-- Display message window:
+     D DspMsgWdw       Pr
+     D  PxMsgStr                   1024a   Const  Varying
+     **-- Send completion message:
+     D SndCmpMsg       Pr            10i 0
+     D  PxMsgDta                    512a   Const  Varying
+     **-- Send diagnostic message:
+     D SndDiagMsg      Pr            10i 0
+     D  PxMsgDta                    512a   Const  Varying
+     **-- Send escape message:
+     D SndEscMsg       Pr            10i 0
+     D  PxMsgId                       7a   Const
+     D  PxMsgF                       10a   Const
+     D  PxMsgDta                    512a   Const  Varying
+     **-- Runtime error ID:
+     D errno           Pr            10i 0
+     **-- Runtime error message:
+     D strerror        Pr           128a   Varying
+
+     **-- Parameters:
+     D CBX2772         Pr
+     D  PxInpFil                   3000a   Varying
+     D  PxHashAlg                    10i 0
+     **
+     D CBX2772         Pi
+     D  PxInpFil                   3000a   Varying
+     D  PxHashAlg                    10i 0
+
+      /Free
+
+        CeeRtx( %Paddr( CleanUp ): *Omit: *Omit );
+
+        fd1 = open( PxInpFil: O_RDONLY: O_IGN_MODE );
+
+        If  fd1 = -1;
+          SndDiagMsg( %Char( errno() ) + ': ' + strerror() );
+
+          SndEscMsg( 'CPF9898': 'QCPFMSG': 'Command ended in error' );
+        Else;
+
+          HshLenRem = lseek( fd1: SEEK_NO_OFS: SEEK_END );
+          rc = lseek( fd1: SEEK_NO_OFS: SEEK_SET );
+
+          HshBlkSiz = GetBlkSiz( fd1: 655350 );
+          pHshDta = %Alloc( HshBlkSiz );
+
+          ALGD0100.AlgCtxTkn = GetAlgCtxH( PxHashAlg );
+
+          DoW  HshLenRem > 0;
+
+            HshDtaLen = read( fd1: pHshDta: HshBlkSiz );
+
+            If  HshLenRem <= HshBlkSiz;
+              ALGD0100.FinOprFlg = '1';
+            Else;
+              ALGD0100.FinOprFlg = '0';
+            EndIf;
+
+            CalculateHash( HshDta
+                         : HshDtaLen
+                         : 'DATA0100'
+                         : ALGD0100
+                         : 'ALGD0100'
+                         : CSP_SFW
+                         : *Blanks
+                         : RtnDtaStr
+                         : ERRC0100
+                         );
+
+            If  ERRC0100.BytAvl > *Zero;
+              ExSr  EscApiErr;
+            EndIf;
+
+            HshLenRem -= HshDtaLen;
+          EndDo;
+
+          OutStr  = CvtChrHex( GetHashVal( PxHashAlg: RtnDtaStr ));
+
+          DspMsgWdw ( 'Input  . . . : ' + PxInpFil + Blanks +
+                      'Hash value . : ' + OutStr );
+
+          SndCmpMsg( 'Hash value calculation completed.' );
+        EndIf;
+
+        CeeUtx( %Paddr( CleanUp ): *Omit );
+
+        CleanUp( *Omit );
+
+        Return;
+
+
+        BegSr  EscApiErr;
+
+          If  ERRC0100.BytAvl < OFS_MSGDTA;
+            ERRC0100.BytAvl = OFS_MSGDTA;
+          EndIf;
+
+          SndEscMsg( ERRC0100.MsgId
+                   : 'QCPFMSG'
+                   : %Subst( ERRC0100.MsgDta: 1: ERRC0100.BytAvl - OFS_MSGDTA )
+                   );
+
+        EndSr;
+
+      /End-Free
+
+     **-- Clean up:
+     P CleanUp         B
+     D                 Pi
+     D  pToken                         *   Options( *Omit )
+
+      /Free
+
+        If  fd1 > -1;
+          rc = close( fd1 );
+        EndIf;
+
+        If  ALGD0100.AlgCtxTkn <> *Blanks;
+          RmvAlgCtx( ALGD0100.AlgCtxTkn );
+        EndIf;
+
+        If  pHshDta <> *Null;
+          DeAlloc(n)  pHshDta;
+        EndIf;
+
+        *InLr = *On;
+
+        Return;
+
+      /End-Free
+
+     P CleanUp         E
+     **-- Get algorithm context - Hash:
+     P GetAlgCtxH      B                   Export
+     D                 Pi             8a
+     D  PxHashAlg                    10i 0          Const
+
+     **-- Hash algorithm description:
+     D ALGD0500        Ds                  Qualified
+     D  HashAlg                      10i 0
+     **-- Local declarations
+     D AlgCtxTkn       s              8a
+
+      /Free
+
+        ALGD0500.HashAlg = PxHashAlg;
+
+        CrtAlgCtx( ALGD0500
+                 : 'ALGD0500'
+                 : AlgCtxTkn
+                 : ERRC0100
+                 );
+
+        If  ERRC0100.BytAvl > *Zero;
+          Return  *Blanks;
+
+        Else;
+          Return  AlgCtxTkn;
+        EndIf;
+
+      /End-Free
+
+     P GetAlgCtxH      E
+     **-- Get block size:
+     P GetBlkSiz       B
+     D                 Pi            10i 0
+     D  PxFd                         10i 0 Const
+     D  PxMaxBlkSiz                  10i 0 Const
+
+      /Free
+
+        Select;
+        When  fstatvfs( PxFd: statvfs ) = -1;
+          Return  PxMaxBlkSiz;
+
+        When  statvfs.f_bsize < 256  Or  statvfs.f_bsize > 16776704;
+          Return  PxMaxBlkSiz;
+
+        When  statvfs.f_bsize > PxMaxBlkSiz;
+          Return  PxMaxBlkSiz;
+
+        When  statvfs.f_bsize * 2 > PxMaxBlkSiz;
+          Return  statvfs.f_bsize;
+
+        Other;
+          Return  %Int( PxMaxBlkSiz / statvfs.f_bsize ) * statvfs.f_bsize;
+        EndSl;
+
+      /End-Free
+
+     P GetBlkSiz       E
+     **-- Get hash value:
+     P GetHashVal      B
+     D                 Pi           512a   Varying
+     D  PxHashAlg                    10i 0 Const
+     D  PxHashStr                   512a   Const
+
+        Select;
+        When  PxHashAlg = TYP_MD5;
+          Return  %Subst( PxHashStr: 1: 16 );
+
+        When  PxHashAlg = TYP_SHA_1;
+          Return  %Subst( PxHashStr: 1: 20 );
+
+        When  PxHashAlg = TYP_SHA_256;
+          Return  %Subst( PxHashStr: 1: 32 );
+
+        When  PxHashAlg = TYP_SHA_384;
+          Return  %Subst( PxHashStr: 1: 48 );
+
+        When  PxHashAlg = TYP_SHA_512;
+          Return  %Subst( PxHashStr: 1: 64 );
+
+        Other;
+          Return  NULL;
+        EndSl;
+
+     P GetHashVal      E
+     **-- Display message window:
+     P DspMsgWdw       B
+     D                 Pi
+     D  PxMsgStr                   1024a   Const  Varying
+
+      /Free
+
+        DspLngTxt( PxMsgStr: %Len( PxMsgStr ): *Blanks: *Blanks: ERRC0100 );
+
+      /End-Free
+
+     P DspMsgWdw       E
+     **-- Send completion message:
+     P SndCmpMsg       B
+     D                 Pi            10i 0
+     D  PxMsgDta                    512a   Const  Varying
+
+     D MsgKey          s              4a
+
+      /Free
+
+        SndPgmMsg( 'CPF9897'
+                 : 'QCPFMSG   *LIBL'
+                 : PxMsgDta
+                 : %Len( PxMsgDta )
+                 : '*COMP'
+                 : '*PGMBDY'
+                 : 1
+                 : MsgKey
+                 : ERRC0100
+                 );
+
+        If  ERRC0100.BytAvl > *Zero;
+          Return  -1;
+
+        Else;
+          Return  0;
+
+        EndIf;
+
+      /End-Free
+
+     P SndCmpMsg       E
+     **-- Send diagnostic message:
+     P SndDiagMsg      B
+     D                 Pi            10i 0
+     D  PxMsgDta                    512a   Const  Varying
+     **
+     D MsgKey          s              4a
+
+      /Free
+
+        SndPgmMsg( 'CPF9897'
+                 : 'QCPFMSG   *LIBL'
+                 : PxMsgDta
+                 : %Len( PxMsgDta )
+                 : '*DIAG'
+                 : '*PGMBDY'
+                 : 1
+                 : MsgKey
+                 : ERRC0100
+                 );
+
+        If  ERRC0100.BytAvl > *Zero;
+          Return  -1;
+
+        Else;
+          Return   0;
+        EndIf;
+
+      /End-Free
+
+     P SndDiagMsg      E
+     **-- Send escape message:
+     P SndEscMsg       B
+     D                 Pi            10i 0
+     D  PxMsgId                       7a   Const
+     D  PxMsgF                       10a   Const
+     D  PxMsgDta                    512a   Const  Varying
+     **
+     D MsgKey          s              4a
+
+      /Free
+
+        SndPgmMsg( PxMsgId
+                 : PxMsgF + '*LIBL'
+                 : PxMsgDta
+                 : %Len( PxMsgDta )
+                 : '*ESCAPE'
+                 : '*PGMBDY'
+                 : 1
+                 : MsgKey
+                 : ERRC0100
+                 );
+
+        If  ERRC0100.BytAvl > *Zero;
+          Return  -1;
+
+        Else;
+          Return   0;
+        EndIf;
+
+      /End-Free
+
+     P SndEscMsg       E
+     **-- Get runtime error number:
+     P errno           B
+     D                 Pi            10i 0
+     **
+     D Error           s             10i 0  Based( pError )  NoOpt
+
+      /Free
+
+        pError = sys_errno;
+
+        Return  Error;
+
+      /End-Free
+
+     P Errno           E
+     **-- Get runtime error text:
+     P strerror        B
+     D                 Pi           128a    Varying
+
+      /Free
+
+        Return  %Str( sys_strerror( Errno ));
+
+      /End-Free
+
+     P strerror        E

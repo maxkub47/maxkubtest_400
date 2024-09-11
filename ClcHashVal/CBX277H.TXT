@@ -1,0 +1,67 @@
+.*-----------------------------------------------------------------------**
+.*
+.*  Compile options:
+.*
+.*    CrtPnlGrp PnlGrp( CBX277H )
+.*              SrcFile( QPNLSRC )
+.*              SrcMbr( CBX277H )
+.*
+.*-----------------------------------------------------------------------**
+:PNLGRP.
+
+:HELP NAME='CLCHASHVAL'.
+Calculate Hash Value - Help
+:P.
+The Calculate Hash Value (CLCHASHVAL) command calculates a hash value
+based on the input string.  The calculated hash value is displayed on
+the screen in a window.
+:EHELP.
+
+:HELP NAME='CLCHASHVAL/CALCDATA'.
+Calculate data (CALCDATA) - Help
+
+:XH3.Calculate data (CALCDATA)
+:P.
+Specifies the input string to the calculate hash function.
+:P.
+A maximum length of 5000 bytes is supported.
+:P.
+This is a required parameter.
+:PARML.
+:PT.:PV.character-value:EPV.
+:PD.
+Specify the input string to use when calculating the hash value.
+:EPARML.
+:EHELP.
+
+:HELP NAME='CLCHASHVAL/HASHALG'.
+Hash algorithm (HASHALG) - Help
+
+:XH3.Hash algorithm (HASHALG)
+:P.
+Specifies the hashing algorithm used when producing a hash value based
+on the specified input string.
+:PARML.
+:PT.:PK.*MD5:EPK.
+:PD.
+The MD5 hash algorithm is used. A hash value of 16 bytes is calculated.
+:PT.:PK DEF.*SHA1:EPK.
+:PD.
+The SHA-1 hash algorithm is used. A hash value of 20 bytes is
+calculated.
+:PT.:PK.*SHA256:EPK.
+:PD.
+The SHA-256 hash algorithm is used. A hash value of 32 bytes is
+calculated.
+:PT.:PK.*SHA384:EPK.
+:PD.
+The SHA-384 hash algorithm is used. A hash value of 48 bytes is
+calculated.
+:PT.:PK.*SHA512:EPK.
+:PD.
+The SHA-512 hash algorithm is used. A hash value of 64 bytes is
+calculated.
+:EPARML.
+:EHELP.
+
+:EPNLGRP.

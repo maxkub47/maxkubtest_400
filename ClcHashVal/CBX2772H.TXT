@@ -1,0 +1,68 @@
+.*-----------------------------------------------------------------------**
+.*
+.*  Compile options:
+.*
+.*    CrtPnlGrp PnlGrp( CBX2772H )
+.*              SrcFile( QPNLSRC )
+.*              SrcMbr( CBX2772H )
+.*
+.*-----------------------------------------------------------------------**
+:PNLGRP.
+
+:HELP NAME='CLCFILHASH'.
+Calculate File Hash Value - Help
+:P.
+The Calculate File Hash Value (CLCFILHASH) command calculates a hash value
+based on the specified input file.  The calculated hash value is displayed
+on the screen in a window.
+:EHELP.
+
+:HELP NAME='CLCFILHASH/INPFILE'.
+Input file (INPFILE) - Help
+
+:XH3.Input file (INPFILE)
+:P.
+Specifies the input file path to the calculate hash function.
+:P.
+A maximum path name length of 3000 bytes is supported.
+:P.
+This is a required parameter.
+:PARML.
+:PT.:PV.path-name:EPV.
+:PD.
+Specify the path name of the input file to use when calculating the hash
+value.
+:EPARML.
+:EHELP.
+
+:HELP NAME='CLCFILHASH/HASHALG'.
+Hash algorithm (HASHALG) - Help
+
+:XH3.Hash algorithm (HASHALG)
+:P.
+Specifies the hashing algorithm used when producing a hash value based
+on the specified input file.
+:PARML.
+:PT.:PK.*MD5:EPK.
+:PD.
+The MD5 hash algorithm is used. A hash value of 16 bytes is calculated.
+:PT.:PK DEF.*SHA1:EPK.
+:PD.
+The SHA-1 hash algorithm is used. A hash value of 20 bytes is
+calculated.
+:PT.:PK.*SHA256:EPK.
+:PD.
+The SHA-256 hash algorithm is used. A hash value of 32 bytes is
+calculated.
+:PT.:PK.*SHA384:EPK.
+:PD.
+The SHA-384 hash algorithm is used. A hash value of 48 bytes is
+calculated.
+:PT.:PK.*SHA512:EPK.
+:PD.
+The SHA-512 hash algorithm is used. A hash value of 64 bytes is
+calculated.
+:EPARML.
+:EHELP.
+
+:EPNLGRP.

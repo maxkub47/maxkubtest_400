@@ -1,0 +1,110 @@
+/*-------------------------------------------------------------------*/
+/*                                                                   */
+/*  Program . . : CBX277M                                            */
+/*  Description : Calculate Hash Value - Build command               */
+/*  Author  . . : Carsten Flensburg                                  */
+/*                                                                   */
+/*                                                                   */
+/*  Program function:  Compiles, creates and configures all the      */
+/*                     Calculate Hash Value command objects.         */
+/*                                                                   */
+/*                     This program expects a single parameter       */
+/*                     specifying the library to contain the         */
+/*                     command objects.                              */
+/*                                                                   */
+/*                     Object sources must exist in the respective   */
+/*                     source type default source files in the       */
+/*                     command object library.                       */
+/*                                                                   */
+/*                                                                   */
+/*                                                                   */
+/*  Compile options:                                                 */
+/*    CrtClPgm    Pgm( CBX277M )                                     */
+/*                SrcFile( QCLSRC )                                  */
+/*                SrcMbr( *PGM )                                     */
+/*                                                                   */
+/*-------------------------------------------------------------------*/
+     Pgm    &UtlLib
+
+     Dcl    &UtlLib         *Char     10
+
+     MonMsg      CPF0000    *N        GoTo Error
+
+
+     DltSrvPgm   &UtlLib/CBX277S
+     MonMsg      CPF0000
+     RcvMsg      MsgType( *LAST )   Rmv( *YES )
+
+
+     CrtRpgMod   &UtlLib/CBX277S                 +
+                 SrcFile( &UtlLib/QRPGLESRC )    +
+                 SrcMbr( *Module )               +
+                 DbgView( *LIST )
+
+     CrtSrvPgm   &UtlLib/CBX277S                 +
+                 Module( &UtlLib/CBX277S )       +
+                 Export( *SRCFILE )              +
+                 SrcFile( QSRVSRC )              +
+                 SrcMbr( CBX277B )               +
+                 ActGrp( QSRVPGM )
+
+
+     CrtRpgMod   &UtlLib/CBX277                  +
+                 SrcFile( &UtlLib/QRPGLESRC )    +
+                 SrcMbr( *Module )               +
+                 DbgView( *LIST )
+
+     CrtPgm      &UtlLib/CBX277                  +
+                 Module( &UtlLib/CBX277 )        +
+                 BndSrvPgm( CBX277S )            +
+                 ActGrp( *NEW )
+
+
+     CrtPnlGrp   &UtlLib/CBX277H                 +
+                 SrcFile( &UtlLib/QPNLSRC )      +
+                 SrcMbr( *PNLGRP )
+
+
+     CrtCmd      Cmd( &UtlLib/CLCHASHVAL )       +
+                 Pgm( CBX277 )                   +
+                 SrcFile( &UtlLib/QCMDSRC )      +
+                 SrcMbr( CBX277X )               +
+                 HlpPnlGrp( CBX277H )            +
+                 HlpId( *CMD )
+
+
+     SndPgmMsg   Msg( 'Command CLCHASHVAL successfully'     *Bcat +
+                      'created in library'                  *Bcat +
+                      &UtlLib                               *Tcat +
+                      '.' )                                       +
+                 MsgType( *COMP )
+
+
+     Call        QMHMOVPM    ( '    '                 +
+                               '*COMP'                +
+                               x'00000001'            +
+                               '*PGMBDY'              +
+                               x'00000001'            +
+                               x'0000000800000000'    +
+                             )
+
+     RmvMsg      Clear( *ALL )
+
+     Return
+
+/*-- Error handling:  -----------------------------------------------*/
+ Error:
+     Call        QMHMOVPM    ( '    '                 +
+                               '*DIAG'                +
+                               x'00000001'            +
+                               '*PGMBDY'              +
+                               x'00000001'            +
+                               x'0000000800000000'    +
+                             )
+
+     Call        QMHRSNEM    ( '    '                 +
+                               x'0000000800000000'    +
+                             )
+
+ EndPgm:
+     EndPgm

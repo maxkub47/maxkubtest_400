@@ -1,0 +1,31 @@
+/*-------------------------------------------------------------------*/
+/*                                                                   */
+/*  Compile options:                                                 */
+/*                                                                   */
+/*    CrtCmd Cmd( CLCHASHVAL )                                       */
+/*           Pgm( CBX277 )                                           */
+/*           SrcMbr( CBX277X )                                       */
+/*           HlpPnlGrp( CBX277H )                                    */
+/*           HlpId( *CMD )                                           */
+/*                                                                   */
+/*-------------------------------------------------------------------*/
+             Cmd        Prompt( 'Calculate Hash Value' )
+
+             Parm       CALCDATA    *Char      5000        +
+                        Min( 1 )                           +
+                        Expr( *YES )                       +
+                        Vary( *YES *INT2 )                 +
+                        Case( *MIXED )                     +
+                        InlPmtLen( 256 )                   +
+                        Prompt( 'Calculate data' )
+
+             Parm       HASHALG     *Int4                  +
+                        Rstd( *YES )                       +
+                        Dft( *SHA1 )                       +
+                        SpcVal(( *MD5     1 )              +
+                               ( *SHA1    2 )              +
+                               ( *SHA256  3 )              +
+                               ( *SHA384  4 )              +
+                               ( *SHA512  5 ))             +
+                        Prompt( 'Hash algorithm' )
+

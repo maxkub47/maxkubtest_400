@@ -1,0 +1,31 @@
+/*-------------------------------------------------------------------*/
+/*                                                                   */
+/*  Compile options:                                                 */
+/*                                                                   */
+/*    CrtCmd Cmd( CLCFILHASH )                                       */
+/*           Pgm( CBX2772 )                                          */
+/*           SrcMbr( CBX2772X )                                      */
+/*           HlpPnlGrp( CBX2772H )                                   */
+/*           HlpId( *CMD )                                           */
+/*                                                                   */
+/*-------------------------------------------------------------------*/
+             Cmd        Prompt( 'Calculate File Hash Value' )
+
+             Parm       INPFILE     *Pname     3000        +
+                        Min( 1 )                           +
+                        Expr( *YES )                       +
+                        Vary( *YES *INT2 )                 +
+                        Case( *MIXED )                     +
+                        InlPmtLen( 256 )                   +
+                        Prompt( 'Input file' )
+
+             Parm       HASHALG     *Int4                  +
+                        Rstd( *YES )                       +
+                        Dft( *SHA1 )                       +
+                        SpcVal(( *MD5     1 )              +
+                               ( *SHA1    2 )              +
+                               ( *SHA256  3 )              +
+                               ( *SHA384  4 )              +
+                               ( *SHA512  5 ))             +
+                        Prompt( 'Hash algorithm' )
+

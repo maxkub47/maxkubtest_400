@@ -1,0 +1,805 @@
+     **
+     **  Program . . : CBX277S
+     **  Description : Cryptographic Services APIs
+     **  Author  . . : Carsten Flensburg
+     **
+     **
+     **
+     **  Programmer's notes:
+     **    Release V5R4 is required to succesfully create this service
+     **    program as some of the APIs used are not available on earlier
+     **    releases.
+     **
+     **
+     **  Compile options:
+     **
+     **    CrtRpgMod  Module( CBX277S )
+     **               DbgView( *NONE )
+     **               Aut( *USE )
+     **
+     **    CrtSrvPgm  SrvPgm( CBX277S )
+     **               Module( CBX277S )
+     **               Export( *SRCFILE )
+     **               SrcFile( QSRVSRC )
+     **               SrcMbr( CBX277B )
+     **               ActGrp( *CALLER )
+     **               UsrPrf( *OWNER )
+     **               Aut( *USE )
+     **
+     **
+     **-- Control specification:  --------------------------------------------**
+     H NoMain  Option( *SrcStmt )  BndDir( 'QC2LE' )
+
+     **-- API error data structure:
+     D ERRC0100        Ds                  Qualified
+     D  BytPrv                       10i 0 Inz( %Size( ERRC0100 ))
+     D  BytAvl                       10i 0
+     D  MsgId                         7a
+     D                                1a
+     D  MsgDta                     1024a
+
+     **-- Global constants:
+     D PRN_REAL        c                   '0'
+     D PRN_TEST        c                   '1'
+     **
+     D PAR_NOT         c                   '0'
+     D PAR_ODD         c                   '1'
+     D PAR_EVEN        c                   '2'
+     **
+     D CSP_ANY         c                   '0'
+     D CSP_SFW         c                   '1'
+     D CSP_HDW         c                   '2'
+     **
+     D DES             c                   20
+     D TDES            c                   21
+     D AES             c                   22
+     D RC2             c                   23
+     **
+     D ECB             c                   '0'
+     D CBC             c                   '1'
+     D OFB             c                   '2'
+     D OFB_1B          c                   '3'
+     D OFB_8B          c                   '4'
+     D OFB_64B         c                   '5'
+     **
+     D PAD_NO          c                   '0'
+     D PAD_CHR         c                   '1'
+     D PAD_CNT         c                   '2'
+     **
+     D KEY_DES         c                   20
+     D KEY_TDES        c                   21
+     D KEY_AES         c                   22
+     D KEY_RC2         c                   23
+     D KEY_RC4_C       c                   30
+     D KEY_RSA_PUB     c                   50
+     D KEY_RSA_PRI     c                   51
+     **
+     D FMT_BIN         c                   '0'
+     D FMT_BER         c                   '1'
+     **
+     D TYP_DES         c                   20
+     D TYP_TDES        c                   21
+     D TYP_AES         c                   22
+     D TYP_RC2         c                   23
+     D TYP_RC4_C       c                   30
+     D TYP_RSA_PUB     c                   50
+     D TYP_RSA_PRI     c                   51
+     **
+     D TYP_MD5         c                   1
+     D TYP_SHA_1       c                   2
+     D TYP_SHA_256     c                   3
+     D TYP_SHA_384     c                   4
+     D TYP_SHA_512     c                   5
+     **
+     D KEY_CLR         c                   '0'
+     D KEY_ENC         c                   '1'
+     **
+     D KEY_CTX_NONE    c                   ' '
+     D ALG_CTX_NONE    c                   ' '
+     D CRP_DEV_NONE    c                   ' '
+     **
+     D FOF_CON         c                   '0'
+     D FOF_FIN         c                   '1'
+     **
+     D NULL            c                   ''
+     D DFT_BLK_LEN     c                   16
+     D DFT_PAD_CHR     c                   x'00'
+
+     **-- Encrypt data API:
+     D EncryptData     Pr                  ExtProc( 'Qc3EncryptData' )
+     D  ClrDta                    65535a   Const  Options( *VarSize )
+     D  ClrDtaLen                    10i 0 Const
+     D  ClrDtaFmt                     8a   Const
+     D  AlgDsc                     1024a   Const  Options( *VarSize )
+     D  AlgDscFmt                     8a   Const
+     D  KeyDsc                     1024a   Const  Options( *VarSize )
+     D  KeyDscFmt                     8a   Const
+     D  CrpSrvPrv                     1a   Const
+     D  CrpDevNam                    10a   Const
+     D  EncDta                    65535a          Options( *VarSize )
+     D  EncDtaLen                    10i 0 Const
+     D  EncRtnLen                    10i 0
+     D  Error                     32767a          Options( *VarSize )
+     **-- Decrypt data API:
+     D DecryptData     Pr                  ExtProc( 'Qc3DecryptData' )
+     D  EncDta                    65535a   Const  Options( *VarSize )
+     D  EncDtaLen                    10i 0 Const
+     D  AlgDsc                     1024a   Const  Options( *VarSize )
+     D  AlgDscFmt                     8a   Const
+     D  KeyDsc                     1024a   Const  Options( *VarSize )
+     D  KeyDscFmt                     8a   Const
+     D  CrpSrvPrv                     1a   Const
+     D  CrpDevNam                    10a   Const
+     D  ClrDta                    65535a          Options( *VarSize )
+     D  ClrDtaLen                    10i 0 Const
+     D  ClrRtnLen                    10i 0
+     D  Error                     32767a          Options( *VarSize )
+     **-- Translate data API:
+     D TranslateData   Pr                  ExtProc( 'Qc3TranslateData' )
+     D  TrnDtaInp                 65535a   Const  Options( *VarSize )
+     D  TrnDtaInpLen                 10i 0 Const
+     D  DecAlgCtxTkn                  8a   Const
+     D  DecKeyCtxTkn                  8a   Const
+     D  EncAlgCtxTkn                  8a   Const
+     D  EncKeyCtxTkn                  8a   Const
+     D  CrpSrvPrv                     1a   Const
+     D  CrpDevNam                    10a   Const
+     D  TrnDtaOut                 65535a          Options( *VarSize )
+     D  TrnDtaOutLen                 10i 0 Const
+     D  TrnDtaRtnLen                 10i 0
+     D  Error                     32767a          Options( *VarSize )
+     **-- Calculate hash API:
+     D CalculateHash   Pr                  ExtProc( 'Qc3CalculateHash' )
+     D  ClcDtaInp                 65535a   Const  Options( *VarSize )
+     D  ClcDtaInpLen                 10i 0 Const
+     D  ClcDtaFmt                     8a   Const
+     D  AlgDsc                      256a   Const  Options( *VarSize )
+     D  AlgDscFmt                     8a   Const
+     D  CrpSrvPrv                     1a   Const
+     D  CrpDevNam                    10a   Const
+     D  ClcDtaOut                   256a          Options( *VarSize )
+     D  Error                     32767a          Options( *VarSize )
+     **-- Generate pseudorandom numbers:
+     D GenRndNbr       Pr                  ExtProc( 'Qc3GenPRNs' )
+     D  PrnDta                     1024a          Options( *VarSize )
+     D  PrnDtaLen                    10i 0 Const
+     D  PrnTyp                        1a   Const
+     D  PrnPar                        1a   Const
+     D  Error                     32767a          Options( *VarSize )
+     **-- Generate symmetric key API:
+     D GenSymKey       Pr                  ExtProc( 'Qc3GenSymmetricKey' )
+     D  KeyTyp                       10i 0 Const
+     D  KeySiz                       10i 0 Const
+     D  KeyFmt                        1a   Const
+     D  KeyFrm                        1a   Const
+     D  KekKeyCtxTkn                  8a   Const
+     D  KekAlgCtxTkn                  8a   Const
+     D  CrpSrvPrv                     1a   Const
+     D  CrpDevNam                    10a   Const
+     D  KeyStr                      256a          Options( *VarSize )
+     D  KeyStrLen                    10i 0 Const
+     D  KeyLenRtn                    10i 0
+     D  Error                     32767a          Options( *VarSize )
+     **-- Create algorithm context API:
+     D CrtAlgCtx       Pr                  ExtProc( 'Qc3CreateAlgorithm-
+     D                                     Context')
+     D  AlgDsc                     1024a   Const  Options( *VarSize )
+     D  AlgDscFmt                     8a   Const
+     D  AlgCtxTkn                     8a
+     D  Error                     32767a          Options( *VarSize )
+     **-- Create key context API:
+     D CrtKeyCtx       Pr                  ExtProc( 'Qc3CreateKeyContext' )
+     D  KeyStr                      256a   Const  Options( *VarSize )
+     D  KeyStrLen                    10i 0 Const
+     D  KeyFmt                        1a   Const
+     D  KeyTyp                       10i 0 Const
+     D  KeyFrm                        1a   Const
+     D  KekKeyCtxTkn                  8a   Const
+     D  KekAlgCtxTkn                  8a   Const
+     D  KeyCtxTkn                     8a
+     D  Error                     32767a          Options( *VarSize )
+     **-- Destroy algorithm context API:
+     D DstAlgCtx       Pr                  ExtProc( 'Qc3DestroyAlgorithm-
+     D                                     Context' )
+     D  AlgCtxTkn                     8a   Const
+     D  Error                     32767a          Options( *VarSize )
+     **-- Destroy key context API:
+     D DstKeyCtx       Pr                  ExtProc( 'Qc3DestroyKeyContext' )
+     D  KeyCtxTkn                     8a   Const
+     D  Error                     32767a          Options( *VarSize )
+     **-- Retrieve key record attributes:
+     D RtvKeyRcdA      Pr                  ExtProc( 'Qc3RetrieveKeyRecordAtr' )
+     D  KeyStore_q                   20a   Const
+     D  RcdLbl                       32a   Const
+     D  KeyTyp                       10i 0
+     D  KeySiz                       10i 0
+     D  MstKeyID                     10i 0
+     D  KeyVfyVal                    20a
+     D  DisAlwFnc                    10i 0
+     D  Error                     32767a          Options( *VarSize )
+     **-- Convert character to hex:
+     D cvtch           Pr                  ExtProc( 'cvtch' )
+     D  RcvChr                         *   Value
+     D  SrcHex                         *   Value
+     D  SrcLen                       10i 0 Value
+     **-- Convert hex to character:
+     D cvthc           Pr                  ExtProc( 'cvthc' )
+     D  RcvHex                         *   Value
+     D  SrcChr                         *   Value
+     D  RcvLen                       10i 0 Value
+
+     **-- Get cipher key:
+     D GetCphKey       Pr            48a   Varying
+     D  PxKeyStore_q                 20a   Const
+     D  PxKeyLbl                     32a   Const  Varying
+
+     **-- Generate initialization vector:
+     D GenInzVct       Pr           128a   Varying
+     D  PxIzvLen                     10i 0 Const
+     **-- Generate AES cipher key:
+     D GenAesKey       Pr            48a   Varying
+     D  PxKeyLen                     10i 0 Const
+     D  PxKekKeyCtxTk                 8a   Const  Options( *NoPass )
+     D  PxKekAlgCtxTk                 8a   Const  Options( *NoPass )
+     **-- Get algorithm context:
+     D GetAlgCtx       Pr             8a
+     D  PxBlkCphAlg                  10i 0 Const
+     D  PxBlkLen                     10i 0 Const
+     D  PxMode                        1a   Const
+     D  PxPadOpt                      1a   Const
+     D  PxPadChr                      1a   Const
+     D  PxInzVct                     32a   Const  Options( *NoPass )
+     **-- Get key context:
+     D GetKeyCtx       Pr             8a
+     D  PxKeyStr                     64a   Varying  Const
+     D  PxKeyTyp                     10i 0 Const
+     D  PxKeyFmt                      1a   Const
+     D  PxKekKeyCtxTk                 8a   Const  Options( *NoPass )
+     D  PxKekAlgCtxTk                 8a   Const  Options( *NoPass )
+     **-- Remove algorithm context:
+     D RmvAlgCtx       Pr            10i 0
+     D  PxAlgCtx                      8a
+     **-- Remove key context:
+     D RmvKeyCtx       Pr            10i 0
+     D  PxKeyCtX                      8a
+     **-- Encrypt data string:
+     D EncDtaStr       Pr          1024a   Varying
+     D  PxDtaStr                   1024a   Varying  Const
+     D  PxAlgCtxTkn                   8a
+     D  PxKeyCtxTkn                   8a
+     **-- Decrypt cipher string:
+     D DecCphStr       Pr          1024a   Varying
+     D  PxCphStr                   1024a   Varying  Const
+     D  PxAlgCtxTkn                   8a
+     D  PxKeyCtxTkn                   8a
+     **-- Calculate hash value:
+     D ClcHashVal      Pr           256a   Varying
+     D  PxCalcStr                 65535a   Varying  Const
+     D  PxHashAlg                    10i 0          Const
+     **-- Get key management algorithm context:
+     D GetMgtAlg       Pr             8a
+     **-- Translate data string:
+     D TrnDtaStr       Pr          1024a   Varying
+     D  PxTrnDtaStr                1024a   Varying  Const
+     D  PxDecAlgCtxTk                 8a
+     D  PxDecKeyCtxTk                 8a
+     D  PxEncAlgCtxTk                 8a
+     D  PxEncKeyCtxTk                 8a
+     **-- Verify key store record:
+     D VfyKeyRcd       Pr            10i 0
+     D  PxKeyStore_q                 20a   Const
+     D  PxRcdLbl                     32a   Const
+     **-- Convert hex nibbles to character:
+     D CvtHexChr       Pr           512a   Varying
+     D  PxHexStr                   1024a   Varying  Const
+     **-- Convert character to hex nibbles:
+     D CvtChrHex       Pr          1024a   Varying
+     D  PxHexStr                    512a   Varying  Const
+
+     **-- Generate initialization vector:
+     P GenInzVct       B                   Export
+     D                 Pi           128a   Varying
+     D  PxIzvLen                     10i 0 Const
+
+     **-- Local declarations
+     D InzVct          s            128a
+
+      /Free
+
+        GenRndNbr( InzVct
+                 : PxIzvLen
+                 : PRN_REAL
+                 : PAR_NOT
+                 : ERRC0100
+                 );
+
+        If  ERRC0100.BytAvl > *Zero;
+          Return  NULL;
+
+        Else;
+          Return  %Subst( InzVct: 1: PxIzvLen );
+        EndIf;
+
+      /End-Free
+
+     P GenInzVct       E
+     **-- Generate AES cipher key:
+     P GenAesKey       B                   Export
+     D                 Pi            48a   Varying
+     D  PxKeyLen                     10i 0 Const
+     D  PxKekKeyCtxTk                 8a   Const  Options( *NoPass )
+     D  PxKekAlgCtxTk                 8a   Const  Options( *NoPass )
+
+     **-- Local declarations
+     D KeyLenRtn       s             10i 0
+     D KeyStr          s             48a
+
+      /Free
+
+        If  %Parms >= 3;
+
+          GenSymKey( TYP_AES
+                   : PxKeyLen
+                   : FMT_BIN
+                   : KEY_ENC
+                   : PxKekKeyCtxTk
+                   : PxKekAlgCtxTk
+                   : CSP_SFW
+                   : CRP_DEV_NONE
+                   : KeyStr
+                   : %Size( KeyStr )
+                   : KeyLenRtn
+                   : ERRC0100
+                   );
+        Else;
+
+          GenSymKey( TYP_AES
+                   : PxKeyLen
+                   : FMT_BIN
+                   : KEY_CLR
+                   : KEY_CTX_NONE
+                   : ALG_CTX_NONE
+                   : CSP_SFW
+                   : CRP_DEV_NONE
+                   : KeyStr
+                   : %Size( KeyStr )
+                   : KeyLenRtn
+                   : ERRC0100
+                   );
+        EndIf;
+
+        If  ERRC0100.BytAvl > *Zero;
+          Return  NULL;
+
+        Else;
+          Return  %Subst( KeyStr: 1: KeyLenRtn );
+        EndIf;
+
+      /End-Free
+
+     P GenAesKey       E
+     **-- Get algorithm context:
+     P GetAlgCtx       B                   Export
+     D                 Pi             8a
+     D  PxBlkCphAlg                  10i 0 Const
+     D  PxBlkLen                     10i 0 Const
+     D  PxMode                        1a   Const
+     D  PxPadOpt                      1a   Const
+     D  PxPadChr                      1a   Const
+     D  PxInzVct                     32a   Const  Options( *NoPass )
+
+     **-- Block cipher algorithm description:
+     D ALGD0200        Ds                  Qualified
+     D  BlkCphAlg                    10i 0
+     D  BlkLen                       10i 0
+     D  Mode                          1a
+     D  PadOpt                        1a
+     D  PadChr                        1a
+     D  Rsv                           1a
+     D  MacLen                       10i 0
+     D  EfcKeySiz                    10i 0
+     D  InzVct_IV                    32a
+     **-- Local declarations
+     D AlgCtxTkn       s              8a
+
+      /Free
+
+        ALGD0200.BlkCphAlg = PxBlkCphAlg;
+        ALGD0200.BlkLen    = PxBlkLen;
+        ALGD0200.Mode      = PxMode;
+        ALGD0200.PadOpt    = PxPadOpt;
+        ALGD0200.PadChr    = PxPadChr;
+        ALGD0200.Rsv       = x'00';
+        ALGD0200.MacLen    = *Zero;
+        ALGD0200.EfcKeySiz = *Zero;
+
+        If  %Parms >= 6;
+          ALGD0200.InzVct_IV = PxInzVct;
+        Else;
+          ALGD0200.InzVct_IV = *Allx'00';
+        EndIf;
+
+        CrtAlgCtx( ALGD0200
+                 : 'ALGD0200'
+                 : AlgCtxTkn
+                 : ERRC0100
+                 );
+
+        If  ERRC0100.BytAvl > *Zero;
+          Return  *Blanks;
+
+        Else;
+          Return  AlgCtxTkn;
+        EndIf;
+
+      /End-Free
+
+     P GetAlgCtx       E
+     **-- Get key context:
+     P GetKeyCtx       B                   Export
+     D                 Pi             8a
+     D  PxKeyStr                     64a   Varying  Const
+     D  PxKeyTyp                     10i 0 Const
+     D  PxKeyFmt                      1a   Const
+     D  PxKekKeyCtxTk                 8a   Const  Options( *NoPass )
+     D  PxKekAlgCtxTk                 8a   Const  Options( *NoPass )
+
+     **-- Local declarations
+     D KeyCtxTkn       s              8a
+
+      /Free
+
+        If  %Parms >= 5;
+
+          CrtKeyCtx( PxKeyStr
+                   : %Len( PxKeyStr )
+                   : PxKeyFmt
+                   : PxKeyTyp
+                   : KEY_ENC
+                   : PxKekKeyCtxTk
+                   : PxKekAlgCtxTk
+                   : KeyCtxTkn
+                   : ERRC0100
+                   );
+        Else;
+
+          CrtKeyCtx( PxKeyStr
+                   : %Len( PxKeyStr )
+                   : PxKeyFmt
+                   : PxKeyTyp
+                   : KEY_CLR
+                   : KEY_CTX_NONE
+                   : ALG_CTX_NONE
+                   : KeyCtxTkn
+                   : ERRC0100
+                   );
+        EndIf;
+
+        If  ERRC0100.BytAvl > *Zero;
+          Return  *Blanks;
+
+        Else;
+          Return  KeyCtxTkn;
+        EndIf;
+
+      /End-Free
+
+     P GetKeyCtx       E
+     **-- Remove algorithm context:
+     P RmvAlgCtx       B                   Export
+     D                 Pi            10i 0
+     D  PxAlgCtxTkn                   8a
+
+      /Free
+
+        DstAlgCtx( PxAlgCtxTkn
+                 : ERRC0100
+                 );
+
+        If  ERRC0100.BytAvl > *Zero;
+          Return  -1;
+
+        Else;
+          Return  0;
+        EndIf;
+
+      /End-Free
+
+     P RmvAlgCtx       E
+     **-- Remove key context:
+     P RmvKeyCtx       B                   Export
+     D                 Pi            10i 0
+     D  PxKeyCtxTkn                   8a
+
+      /Free
+
+        DstKeyCtx( PxKeyCtxTkn
+                 : ERRC0100
+                 );
+
+        If  ERRC0100.BytAvl > *Zero;
+          Return  -1;
+
+        Else;
+          Return  0;
+        EndIf;
+
+      /End-Free
+
+     P RmvKeyCtx       E
+     **-- Encrypt data string:
+     P EncDtaStr       B                   Export
+     D                 Pi          1024a   Varying
+     D  PxDtaStr                   1024a   Varying  Const
+     D  PxAlgCtxTkn                   8a
+     D  PxKeyCtxTkn                   8a
+
+     **-- Algorithm context token structure:
+     D ALGD0100        Ds                  Qualified
+     D  AlgCtxTkn                     8a
+     D  FinOprFlg                     1a
+     **-- Local declarations
+     D EncDtaStr       s           1024a
+     D EncRtnLen       s             10i 0
+
+      /Free
+
+        ALGD0100.AlgCtxTkn = PxAlgCtxTkn;
+        ALGD0100.FinOprFlg = FOF_FIN;
+
+        EncryptData( PxDtaStr
+                   : %Len( PxDtaStr )
+                   : 'DATA0100'
+                   : ALGD0100
+                   : 'ALGD0100'
+                   : PxKeyCtxTkn
+                   : 'KEYD0100'
+                   : CSP_SFW
+                   : *Blanks
+                   : EncDtaStr
+                   : %Size( EncDtaStr )
+                   : EncRtnLen
+                   : ERRC0100
+                   );
+
+        If  ERRC0100.BytAvl > *Zero;
+          Return  NULL;
+
+        Else;
+          Return  %Subst( EncDtaStr: 1: EncRtnLen );
+        EndIf;
+
+      /End-Free
+
+     P EncDtaStr       E
+     **-- Decrypt cipher string:
+     P DecCphStr       B                   Export
+     D                 Pi          1024a   Varying
+     D  PxCphStr                   1024a   Varying  Const
+     D  PxAlgCtxTkn                   8a
+     D  PxKeyCtxTkn                   8a
+
+     **-- Algorithm context token structure:
+     D ALGD0100        Ds                  Qualified
+     D  AlgCtxTkn                     8a
+     D  FinOprFlg                     1a
+     **-- Local declarations
+     D RtnDtaStr       s           1024a
+     D RtnDtaLen       s             10i 0
+
+      /Free
+
+        ALGD0100.AlgCtxTkn = PxAlgCtxTkn;
+        ALGD0100.FinOprFlg = FOF_FIN;
+
+        DecryptData( PxCphStr
+                   : %Len( PxCphStr )
+                   : ALGD0100
+                   : 'ALGD0100'
+                   : PxKeyCtxTkn
+                   : 'KEYD0100'
+                   : CSP_SFW
+                   : *Blanks
+                   : RtnDtaStr
+                   : %Size( RtnDtaStr )
+                   : RtnDtaLen
+                   : ERRC0100
+                   );
+
+        If  ERRC0100.BytAvl > *Zero;
+          Return  NULL;
+
+        Else;
+          Return  %Subst( RtnDtaStr: 1: RtnDtaLen );
+        EndIf;
+
+      /End-Free
+
+     P DecCphStr       E
+     **-- Calculate hash value:
+     P ClcHashVal      B                   Export
+     D                 Pi           256a   Varying
+     D  PxCalcStr                 65535a   Varying  Const
+     D  PxHashAlg                    10i 0          Const
+
+     **-- Algorithm context token structure:
+     D ALGD0100        Ds                  Qualified
+     D  AlgCtxTkn                     8a
+     D  FinOprFlg                     1a
+     **
+     D ALGD0500        Ds                  Qualified
+     D  HashAlg                      10i 0
+     **-- Local declarations
+     D RtnDtaStr       s           1024a
+
+      /Free
+
+        ALGD0500.HashAlg = PxHashAlg;
+
+        CalculateHash( PxCalcStr
+                     : %Len( PxCalcStr )
+                     : 'DATA0100'
+                     : ALGD0500
+                     : 'ALGD0500'
+                     : CSP_SFW
+                     : *Blanks
+                     : RtnDtaStr
+                     : ERRC0100
+                     );
+
+        Select;
+        When  ERRC0100.BytAvl > *Zero;
+          Return  NULL;
+
+        When  ALGD0500.HashAlg = TYP_MD5;
+          Return  %Subst( RtnDtaStr: 1: 16 );
+
+        When  ALGD0500.HashAlg = TYP_SHA_1;
+          Return  %Subst( RtnDtaStr: 1: 20 );
+
+        When  ALGD0500.HashAlg = TYP_SHA_256;
+          Return  %Subst( RtnDtaStr: 1: 32 );
+
+        When  ALGD0500.HashAlg = TYP_SHA_384;
+          Return  %Subst( RtnDtaStr: 1: 48 );
+
+        When  ALGD0500.HashAlg = TYP_SHA_512;
+          Return  %Subst( RtnDtaStr: 1: 64 );
+
+        Other;
+          Return  NULL;
+        EndSl;
+
+      /End-Free
+
+     P ClcHashVal      E
+     **-- Get key management algorithm context:
+     P GetMgtAlg       B                   Export
+     D                 Pi             8a
+
+     **-- Local declarations
+     D AlgCtxTkn       s              8a
+
+      /Free
+
+        AlgCtxTkn = GetAlgCtx( AES: DFT_BLK_LEN: ECB: PAD_CHR: DFT_PAD_CHR );
+
+        Return  AlgCtxTkn;
+
+      /End-Free
+
+     P GetMgtAlg       E
+     **-- Translate data string:
+     P TrnDtaStr       B                   Export
+     D                 Pi          1024a   Varying
+     D  PxTrnDtaStr                1024a   Varying  Const
+     D  PxDecAlgCtxTk                 8a
+     D  PxDecKeyCtxTk                 8a
+     D  PxEncAlgCtxTk                 8a
+     D  PxEncKeyCtxTk                 8a
+
+     **-- Local declarations
+     D TrnRtnDtaStr    s           1024a
+     D TrnRtnDtaLen    s             10i 0
+
+      /Free
+
+        TranslateData( PxTrnDtaStr
+                     : %Len( PxTrnDtaStr )
+                     : PxDecAlgCtxTk
+                     : PxDecKeyCtxTk
+                     : PxEncAlgCtxTk
+                     : PxEncKeyCtxTk
+                     : CSP_SFW
+                     : *Blanks
+                     : TrnRtnDtaStr
+                     : %Size( TrnRtnDtaStr )
+                     : TrnRtnDtaLen
+                     : ERRC0100
+                     );
+
+        If  ERRC0100.BytAvl > *Zero;
+          Return  NULL;
+
+        Else;
+          Return  %Subst( TrnRtnDtaStr: 1: TrnRtnDtaLen );
+        EndIf;
+
+      /End-Free
+
+     P TrnDtaStr       E
+     **-- Verify key store record:
+     P VfyKeyRcd       B                   Export
+     D                 Pi            10i 0
+     D  PxKeyStore_q                 20a   Const
+     D  PxRcdLbl                     32a   Const
+
+     **-- Local declarations
+     D KeyTyp          s             10i 0
+     D KeySiz          s             10i 0
+     D MstKeyID        s             10i 0
+     D KeyVfyVal       s             20a
+     D DisAlwFnc       s             10i 0
+
+      /Free
+
+        RtvKeyRcdA( PxKeyStore_q
+                  : PxRcdLbl
+                  : KeyTyp
+                  : KeySiz
+                  : MstKeyID
+                  : KeyVfyVal
+                  : DisAlwFnc
+                  : ERRC0100
+                  );
+
+        If  ERRC0100.BytAvl > *Zero;
+          Return  -1;
+
+        Else;
+          Return  *Zero;
+        EndIf;
+
+      /End-Free
+
+     P VfyKeyRcd       E
+     **-- Convert hex nibbles to character:
+     P CvtHexChr       B                   Export
+     D                 Pi           512a   Varying
+     D  PxHexStr                   1024a   Varying  Const
+
+     **-- Local declarations
+     D ChrStr          s            512a
+     D HexStr          s           1024a
+
+      /Free
+
+        HexStr = PxHexStr;
+
+        cvtch( %Addr( ChrStr ): %Addr( HexStr ): %Len( PxHexStr ));
+
+        Return  %Subst( ChrStr: 1: %Int( %Len( PxHexStr ) / 2 ));
+
+      /End-Free
+
+     P CvtHexChr       E
+     **-- Convert character to hex nibbles:
+     P CvtChrHex       B                   Export
+     D                 Pi          1024a   Varying
+     D  PxChrStr                    512a   Varying  Const
+
+     **-- Local declarations
+     D HexStr          s           1024a
+     D ChrStr          s            512a
+
+      /Free
+
+        ChrStr = PxChrStr;
+
+        cvthc( %Addr( HexStr ): %Addr( ChrStr ): %Len( PxChrStr ) * 2 );
+
+        Return  %Subst( HexStr: 1: %Int( %Len( PxChrStr ) * 2 ));
+
+      /End-Free
+
+     P CvtChrHex       E
