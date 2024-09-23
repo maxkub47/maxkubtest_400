@@ -17,6 +17,17 @@ dcl-pr getenv pointer extproc('getenv');
   varname pointer value options(*string);
 end-pr;
 
+dcl-pr chk_usr extpgm('QSYGETPH');
+  UserID              char(10)    const;
+  password            char(10)    const;
+  ProfileHandle       char(12);
+  ErrorCode           char(16) options(*varsize:*nopass)  ;
+  LengthOfPassword    int(10) options(*nopass) const;
+  CCSIDOfPassword     int(10) options(*nopass) const ;
+end-pr;
+
+/COPY QSYSINC/QRPGLESRC,QUSEC
+
 dcl-s authHeader char(512);
 dcl-s authEnvPtr pointer;
 dcl-s decodedValue char(512) ccsid(819);
@@ -26,6 +37,10 @@ dcl-s pos int(5);
 dcl-s chkaut char(1);
 dcl-s username char(10);
 dcl-s password char(10);
+dcl-s Profile_handle char(12) inz('');
+dcl-s Length_of_password int(10);
+dcl-s CCSID_of_password int(10) inz(37);
+dcl-s result char(1);
 
 dcl-proc getUserDes export;
   dcl-pi *n  ;
@@ -41,25 +56,18 @@ dcl-proc getUserDes export;
 
   if base64Token <> '';
     exec sql 
-      select systools.BASE64DECODE(:base64Token)
-      into :decodedValue
-      from sysibm.sysdummy1;
+    select systools.BASE64DECODE(:base64Token)
+    into :decodedValue
+    from sysibm.sysdummy1;
 
     pos = %scan (txtscan : decodedValue);
-    username = %subst(decodedValue : 1 : pos - 1 );
-    password = %trimr(%subst(decodedValue : pos + 1 : 10));
+    username = %upper(%subst(decodedValue : 1 : pos - 1 ));
+    password = %upper(%trimr(%subst(decodedValue : pos + 1 : 10)));
+    Length_of_password = %len(password);
 
-    exec sql
-      select 'Y' 
-      into :chkaut
-      from prd1dblib.c8201p
-      where A7DEY1 = 'API_AUTH' and 
-            A7DEY2 = 'WOS' and 
-            A7DDTA = :username and 
-            A7DDES = :password ;
+    chk_usr(username: password: Profile_handle: QUSEC: Length_of_password: CCSID_of_password);
 
-
-    if chkaut = 'Y';
+    if QUSBAVL = 0;
 
       exec sql 
         select j1emcd, j1nmth, j1fcti, j1dept 
@@ -71,7 +79,7 @@ dcl-proc getUserDes export;
       if sqlcod = 0 ; 
         httpStatus = 200;
         message = 'Success';
-        result = 'OK';
+        result = 'ok';
         data = response ; 
       else;
         httpStatus = 200;
