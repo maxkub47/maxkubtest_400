@@ -4,15 +4,10 @@ ctl-opt nomain
         option(*srcstmt: *nodebugio)
         pgminfo(*PCML:*MODULE);
 
-dcl-pr decodeBase64 ; 
-  input			char(1024) ; 
-  output    char(1024) ; 
-end-pr ; 
-
-dcl-proc decodeBase64 export ; 
-  dcl-pi decodeBase64 ; 
-    		input			char(1024) ; 
-    	output    char(1024) ; 
+dcl-proc AAA export ; 
+  dcl-pi *n ; 
+    input			char(1024) ; 
+    output    char(1024) ccsid(819); 
   end-pi ; 
 
   exec sql 
