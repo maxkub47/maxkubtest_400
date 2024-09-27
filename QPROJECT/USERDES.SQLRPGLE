@@ -4,7 +4,17 @@ ctl-opt nomain
         pgminfo(*PCML:
                 *MODULE:
                 *DCLCASE);
-
+                
+// **************************************************************************
+// ***    PROGRAM ID   :  PBB910R
+// ***    PROGRAM NAME :  Get Incharge Description
+// ***    REMARK       :
+// ***    AUTHOR       :  L.Rattapon (MSC)    27/Sep/2024
+// ***
+// ***    ------------<<   MAINTENANCE   >>--------------------
+// ***      DATE      PROGRAMMER         DESRIPTION
+// ***
+// **************************************************************************
 
 dcl-ds response  qualified ;
   employee_id     char(5);
