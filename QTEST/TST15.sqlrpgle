@@ -53,3 +53,20 @@ http_end();
 
 *inlr = *on
 
+
+
+/* exec sql
+    values json_object(
+        'basicAuth'    value  :username || ',' || :password,
+        'header' value 'Content-Type,application/json')
+    into :headers;
+
+exec sql
+   values json_object(
+      'model'  value    'TST123M0',
+      'lot'    value    '001',
+      'unit'   value    '1' ,
+      'stage'  value    'maxkubtest',
+      'print_flag' value  'Y')
+   into  :requestBody ;
+*/
