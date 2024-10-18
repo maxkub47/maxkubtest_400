@@ -38,7 +38,7 @@ endif ;
 
 QUSBPRV = 0 ; 
 RtvJobQ(QSPQ010000: %size(QSPQ010000): 'JOBQ0100': JOBQ: QUSEC);
-dsply ('JobQ ' + %trim(QSPJQLN) + '/' + %trim(qspjqn)+ ' has ' + %char(QSPNBRJ));
+snd-msg *info ('JobQ ' + %trim(QSPJQLN) + '/' + %trim(qspjqn)+ ' has ' + %char(QSPNBRJ));
 
 *INLR = *on ;
 return ; 
