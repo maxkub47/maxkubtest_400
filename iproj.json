@@ -1,6 +1,5 @@
 {
   "description": "MaxKuB Test Feature",
-  "preUsrlibl": [
-    "MAXTEST"
-  ]
+  "curlib": "MAXTEST",
+  "preUsrlibl": ["MAXTEST"]
 }

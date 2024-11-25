@@ -14,7 +14,7 @@ dcl-c H_CONFLICT       409 ;
 dcl-c H_GONE           410 ;   
 dcl-c H_SERVERERROR    500 ;  
 
-dcl-pr tstHeader  ;
+dcl-pr tstHeader extpgm(tst10);
   output1      char(256); 
   output2      char(256);
   httpStatus   int(10:0);
